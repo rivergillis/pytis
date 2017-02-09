@@ -19,7 +19,8 @@ class Node(object):
 
     # TODO: Create a static enum for modes
     def __init__(self, xpos, ypos):
-        self.pos = (xpos, ypos)
+        self.xpos = xpos
+        self.ypos = ypos
         self.acc = 0
         self.bak = 0
         self.last = None
@@ -27,8 +28,8 @@ class Node(object):
         self.lines = list()
         self.code = list()
         self.call_stack = list()
-        self.inputs = {}
-        self.outputs = {}
+        self.inputs = {"LEFT": None, "RIGHT": None, "UP": None, "DOWN": None}
+        self.outputs = {"LEFT": None, "RIGHT": None, "UP": None, "DOWN": None}
         print("Created Node at ", xpos, ypos)
     
     def build_io_tables(self):
@@ -57,3 +58,10 @@ class Node(object):
             self.add(literal)
         else:
             acc += val
+
+    def print_adjacency(self):
+        for k,v in self.inputs.items():
+            if (v != None):
+                print("Node at ", self.xpos, self.ypos, " has node ", k, " at ", v.xpos, v.ypos)
+            else:
+                print("Node at ", self.xpos, self.ypos, " has no node ", k)

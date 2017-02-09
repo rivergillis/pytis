@@ -15,6 +15,11 @@ class Node(object):
     Input is handled by a list of 4 values representing
     the input in clockwise fashion (0 being up, 3 being left)
     output is handled in the same fashion
+
+    The call stack is a list of triplets where the first term is
+    the instruction and the next two terms are arguments, for instructions with
+    less than two arguments, the extra fields are None.
+    Arguments are stored as numeric types when possible.
     """
 
     # TODO: Create a static enum for modes
@@ -28,11 +33,32 @@ class Node(object):
         self.lines = list()
         self.code = list()
         self.call_stack = list()
-        self.inputs = {"LEFT": None, "RIGHT": None, "UP": None, "DOWN": None}
-        self.outputs = {"LEFT": None, "RIGHT": None, "UP": None, "DOWN": None}
+        self.adjacency = {"LEFT": None, "RIGHT": None, "UP": None, "DOWN": None}
         print("Created Node at ", xpos, ypos)
+
+    def parse_lines(self):
+        self.code = list()
+        """ Parses the string lines to be
+            placed onto the call stack
+        """
+        for line in self.lines:
+            instruction = tuple()
+            args = line.split(" ")
+            for i in range(3):
+                if (i > len(args)-1):
+                    instruction += (None,)
+                else:
+                    try:
+                        instruction += (int(args[i]),)
+                    except ValueError:
+                        instruction += (args[i],)
+            self.code.append(instruction)
+
     
-    def build_io_tables(self):
+    def execute_next(self):
+        """ Executes the next instruction
+            on the call stack
+        """
         pass
 
     def send_output(self, node):
@@ -47,6 +73,12 @@ class Node(object):
         from another node
         """
         return node.send_output(self)
+
+    def sav(self):
+        """ The value of ACC is written to BAK
+        syntax: SAV
+        """
+        self.bak = self.acc
     
     def add(self, val):
         """ Adds a value to the accumulator
@@ -59,8 +91,25 @@ class Node(object):
         else:
             acc += val
 
+    def sub(self, val):
+        """ Subtracts a value from the accumulator
+        syntax: SUB <x>
+        Where x can be a Node or a value
+        """
+        if (type(val) == Node):
+            literal = self.get_input(val)
+            self.sub(literal)
+        else:
+            acc -= val
+
+    def neg(self):
+        """ Negates ACC
+        syntax: NEG
+        """
+        acc *= -1
+
     def print_adjacency(self):
-        for k,v in self.inputs.items():
+        for k,v in self.adjacency.items():
             if (v != None):
                 print("Node at ", self.xpos, self.ypos, " has node ", k, " at ", v.xpos, v.ypos)
             else:

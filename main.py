@@ -16,17 +16,13 @@ def build_io_tables(nodes):
     for current_assignment in nodes:
         for checking in nodes:
             if (checking.xpos == (current_assignment.xpos - 1) and checking.ypos == current_assignment.ypos):
-                current_assignment.inputs["LEFT"] = checking
-                current_assignment.outputs["LEFT"] = checking
+                current_assignment.adjacency["LEFT"] = checking
             elif (checking.xpos == (current_assignment.xpos + 1) and checking.ypos == current_assignment.ypos):
-                current_assignment.inputs["RIGHT"] = checking
-                current_assignment.outputs["RIGHT"] = checking
+                current_assignment.adjacency["RIGHT"] = checking
             elif (checking.ypos == (current_assignment.ypos - 1) and checking.xpos == current_assignment.xpos):
-                current_assignment.inputs["UP"] = checking
-                current_assignment.outputs["UP"] = checking
+                current_assignment.adjacency["UP"] = checking
             elif (checking.ypos == (current_assignment.ypos + 1) and checking.xpos == current_assignment.xpos):
-                current_assignment.inputs["DOWN"] = checking
-                current_assignment.outputs["DOWN"] = checking
+                current_assignment.adjacency["DOWN"] = checking
 
 def simulate():
     nodes = [Node(x,y) for x in range(COLUMNS) for y in range(ROWS)]

@@ -6,6 +6,7 @@
 """
 
 class Node(object):
+
     """ The node object represents the squares containing code
     Each node has a list of lines of code as a list of strings
     A call stack, that is the parsed form of those lines
@@ -22,6 +23,12 @@ class Node(object):
     Arguments are stored as numeric types when possible.
     """
 
+    VALID_INSTRUCTIONS = dict([("NOP", 1), ("MOV", 3), ("SWP", 1), ("SAV", 1),
+        ("ADD", 2), ("SUB", 2), ("NEG", 1), ("JMP", 2), ("JEZ", 2),
+        ("JNZ", 2), ("JGZ", 2), ("JLZ", 2), ("JRO", 2)])
+    
+    VALID_REGISTERS = ["ACC", "NIL", "LEFT", "RIGHT", "UP", "DOWN", "ANY", "LAST"]
+
     # TODO: Create a static enum for modes
     def __init__(self, xpos, ypos):
         self.xpos = xpos
@@ -33,17 +40,52 @@ class Node(object):
         self.lines = list()
         self.code = list()
         self.call_stack = list()
+        self.labels = list()
+        self.is_valid = True
         self.adjacency = {"LEFT": None, "RIGHT": None, "UP": None, "DOWN": None}
         print("Created Node at ", xpos, ypos)
+    
+    def validate_code(self):
+        """ Validates that instructions are
+        syntactically correct
+        """
+        for instruction in self.lines:
+            instruct_len = 0
+            args = []
+            for i in instruction:
+                if (i):
+                    args.append(i)
+                    instruct_len += 1
+            opcode = instruction[0]
+
+            if (Node.VALID_INSTRUCTIONS.get(opcode, -1) != instruct_len):
+                is_valid = False
+                return
+            if (opcode == "ADD" or opcode == "SUB"):
+                if (type(args[0]) == int):
+                    continue
+                elif (args[0] not in Node.VALID_REGISTERS):
+                    is_valid = False
+                    return
+            elif (opcode == "MOV"):
+                if (args[0] not in Node.VALID_REGISTERS or args[1] not in Node.VALID_REGISTERS):
+                    is_valid = False
+                    return
+            elif (opcode.startswith("J")):
+                if (args[0] not in self.labels):
+                    is_valid = False
+                    return
+
 
     def parse_lines(self):
         self.code = list()
         """ Parses the string lines to be
             placed onto the call stack
+            note: doesn't support multiple spaces yet
         """
         for line in self.lines:
             instruction = tuple()
-            args = line.split(" ")
+            args = line.replace(",", "").split(" ")
             for i in range(3):
                 if (i > len(args)-1):
                     instruction += (None,)

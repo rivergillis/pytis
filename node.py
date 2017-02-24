@@ -5,6 +5,7 @@
     sequentially (possibly twice over).
 """
 
+
 class Node(object):
 
     """ The node object represents the squares containing code
@@ -24,10 +25,12 @@ class Node(object):
     """
 
     VALID_INSTRUCTIONS = dict([("NOP", 1), ("MOV", 3), ("SWP", 1), ("SAV", 1),
-        ("ADD", 2), ("SUB", 2), ("NEG", 1), ("JMP", 2), ("JEZ", 2),
-        ("JNZ", 2), ("JGZ", 2), ("JLZ", 2), ("JRO", 2)])
-    
-    VALID_REGISTERS = ["ACC", "NIL", "LEFT", "RIGHT", "UP", "DOWN", "ANY", "LAST"]
+                               ("ADD", 2), ("SUB", 2), ("NEG", 1), ("JMP", 2),
+                               ("JEZ", 2), ("JNZ", 2), ("JGZ", 2), ("JLZ", 2),
+                               ("JRO", 2)])
+
+    VALID_REGISTERS = ["ACC", "NIL", "LEFT",
+                       "RIGHT", "UP", "DOWN", "ANY", "LAST"]
 
     # TODO: Create a static enum for modes
     def __init__(self, xpos, ypos):
@@ -42,40 +45,49 @@ class Node(object):
         self.call_stack = list()
         self.labels = list()
         self.is_valid = True
-        self.adjacency = {"LEFT": None, "RIGHT": None, "UP": None, "DOWN": None}
+        self.adjacency = {"LEFT": None,
+                          "RIGHT": None, "UP": None, "DOWN": None}
+
+        self.pc = 0  # program counter
         print("Created Node at ", xpos, ypos)
-    
+
     def validate_code(self):
         """ Validates that instructions are
         syntactically correct
         """
+        # iterate through every instruction in lines
         for instruction in self.lines:
             instruct_len = 0
             args = []
+            # get the length of the instruction in args
             for i in instruction:
                 if (i):
                     args.append(i)
                     instruct_len += 1
+            # the first arg is the opcode
             opcode = instruction[0]
 
+            # invalid if any argcount is not correct
             if (Node.VALID_INSTRUCTIONS.get(opcode, -1) != instruct_len):
-                is_valid = False
+                self.is_valid = False
                 return
+            # ADD/SUB needs a register or a number
             if (opcode == "ADD" or opcode == "SUB"):
                 if (type(args[0]) == int):
                     continue
                 elif (args[0] not in Node.VALID_REGISTERS):
-                    is_valid = False
+                    self.is_valid = False
                     return
+            # MOV needs a register
             elif (opcode == "MOV"):
                 if (args[0] not in Node.VALID_REGISTERS or args[1] not in Node.VALID_REGISTERS):
-                    is_valid = False
+                    self.is_valid = False
                     return
+            # J needs a label
             elif (opcode.startswith("J")):
                 if (args[0] not in self.labels):
-                    is_valid = False
+                    self.is_valid = False
                     return
-
 
     def parse_lines(self):
         self.code = list()
@@ -83,25 +95,51 @@ class Node(object):
             placed onto the call stack
             note: doesn't support multiple spaces yet
         """
+        # iterate through every string of code
         for line in self.lines:
             instruction = tuple()
+            # remove commas and split on spaces
+            # TODO: handle commas with no spaces
             args = line.replace(",", "").split(" ")
+            # each instruction gets a spot for 3 args (including opcode)
             for i in range(3):
-                if (i > len(args)-1):
+                # Any empty args get None
+                if (i > len(args) - 1):
                     instruction += (None,)
                 else:
+                    # Add the arg, make it numeric if possible
                     try:
                         instruction += (int(args[i]),)
                     except ValueError:
                         instruction += (args[i],)
             self.code.append(instruction)
+        self.validate_code()
 
-    
     def execute_next(self):
         """ Executes the next instruction
-            on the call stack
+            that the program counter points to
         """
-        pass
+        # return if empty node
+        if (not self.code):
+            return
+
+        # grab the next instruction
+        instruction = self.code[self.pc]
+        opcode = instruction[0]
+
+        print(instruction)
+
+        if (opcode == "ADD"):
+            self.add(instruction[1])
+        elif (opcode == "SUB"):
+            self.sub(instruction[1])
+        elif (opcode == "NEG"):
+            self.neg()
+
+        # increment pc and set to start if we've gotten to the end
+        self.pc += 1
+        if (self.pc >= len(self.code)):
+            self.pc = 0
 
     def send_output(self, node):
         """ Returns an output to another
@@ -121,7 +159,7 @@ class Node(object):
         syntax: SAV
         """
         self.bak = self.acc
-    
+
     def add(self, val):
         """ Adds a value to the accumulator
         This is done using ADD <x>
@@ -131,7 +169,7 @@ class Node(object):
             literal = self.get_input(val)
             self.add(literal)
         else:
-            acc += val
+            self.acc += val
 
     def sub(self, val):
         """ Subtracts a value from the accumulator
@@ -142,17 +180,26 @@ class Node(object):
             literal = self.get_input(val)
             self.sub(literal)
         else:
-            acc -= val
+            self.acc -= val
 
     def neg(self):
         """ Negates ACC
         syntax: NEG
         """
-        acc *= -1
+        self.acc *= -1
+
+    def __str__(self):
+        s = "Node at (" + str(self.xpos) + "," + str(self.ypos) + ")"
+        s += " ACC: " + str(self.acc) + " BAK: " + \
+            str(self.bak) + " pc: " + str(self.pc)
+        if (not self.is_valid):
+            s += " INVALID CODE"
+        return s
 
     def print_adjacency(self):
-        for k,v in self.adjacency.items():
+        for k, v in self.adjacency.items():
             if (v != None):
-                print("Node at ", self.xpos, self.ypos, " has node ", k, " at ", v.xpos, v.ypos)
+                print("Node at ", self.xpos, self.ypos,
+                      " has node ", k, " at ", v.xpos, v.ypos)
             else:
                 print("Node at ", self.xpos, self.ypos, " has no node ", k)

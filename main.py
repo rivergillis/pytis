@@ -3,6 +3,7 @@ from node import Node
 COLUMNS = 3
 ROWS = 3
 
+
 def build_io_tables(nodes):
     """ Assigns the LEFT, UP, DOWN, RIGHT values of each node's
     IO hash tables to the corresponding node objects.
@@ -24,14 +25,20 @@ def build_io_tables(nodes):
             elif (checking.ypos == (current_assignment.ypos + 1) and checking.xpos == current_assignment.xpos):
                 current_assignment.adjacency["DOWN"] = checking
 
+
+def update_output_table(nodes, pipes):
+    """
+    Iterates through every node and updates """
+
+
 def simulate():
-    nodes = [Node(x,y) for x in range(COLUMNS) for y in range(ROWS)]
-    print(nodes)
+    nodes = [Node(x, y) for x in range(COLUMNS) for y in range(ROWS)]
 
     build_io_tables(nodes)
 
     for node in nodes:
-        node.print_adjacency()
+        # node.print_adjacency()
+        node.execute_next()
 
 
 if __name__ == "__main__":

@@ -4,6 +4,32 @@ COLUMNS = 3
 ROWS = 3
 
 
+def load_nodes(filename):
+    """ Loads a set of nodes in from filename """
+    with open(filename) as f:
+        content = f.readlines()
+    # remove whitespace
+    content = [x.strip() for x in content]
+
+    nodes = []
+    node_count = -1
+
+    for line in content:
+        # start of a new node
+        if line.startswith("["):
+            temp = line.replace(" ", "")
+            nodes.append(Node(int(temp[1]), int(temp[3])))
+            node_count += 1
+        # not whitespace
+        elif line:
+            nodes[node_count].lines.append(line)
+
+    for node in nodes:
+        print(node)
+        print(node.lines)
+    return nodes
+
+
 def build_io_tables(nodes):
     """ Assigns the LEFT, UP, DOWN, RIGHT values of each node's
     IO hash tables to the corresponding node objects.
@@ -32,7 +58,8 @@ def update_output_table(nodes, pipes):
 
 
 def simulate():
-    nodes = [Node(x, y) for x in range(COLUMNS) for y in range(ROWS)]
+    nodes = load_nodes("nodes.txt")
+    #nodes = [Node(x, y) for x in range(COLUMNS) for y in range(ROWS)]
 
     build_io_tables(nodes)
 

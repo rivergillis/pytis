@@ -7,3 +7,11 @@ SAV
 ADD 300
 SWP
 ADD 3
+
+[1,0]
+Label:
+ADD 5
+another_label:
+SUB 3
+ADD:
+ADD 5

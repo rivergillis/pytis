@@ -43,7 +43,7 @@ class Node(object):
         self.lines = list()
         self.code = list()
         self.call_stack = list()
-        self.labels = list()
+        self.labels = dict()
         self.is_valid = True
         self.adjacency = {"LEFT": None,
                           "RIGHT": None, "UP": None, "DOWN": None}
@@ -100,7 +100,18 @@ class Node(object):
             note: doesn't support multiple spaces yet
         """
         # iterate through every string of code
-        for line in self.lines:
+        for line_num, line in enumerate(self.lines):
+            # This is a label on a line by itself
+            if (line.strip().endswith(':')):
+                stripped = line.strip()
+                # If we redefine a label, this is invalid code
+                if (self.labels.get(stripped, False)):
+                    self.is_valid = False
+                    return
+                # Otherwise, save the label, line_num pair in labels dict
+                self.labels[stripped] = line_num
+                continue
+
             instruction = tuple()
             # remove commas and split on spaces
             # TODO: handle commas with no spaces

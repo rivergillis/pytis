@@ -28,6 +28,7 @@ def load_nodes(filename):
 
     for node in nodes:
         node.parse_lines()
+        print("Labels: ", node.labels)
 
     return nodes
 

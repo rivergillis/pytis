@@ -1,4 +1,6 @@
 from node import Node
+from colorama import init, Fore, Back, Style
+init()
 
 COLUMNS = 3
 ROWS = 3
@@ -25,8 +27,8 @@ def load_nodes(filename):
             nodes[node_count].lines.append(line)
 
     for node in nodes:
-        print(node)
-        print(node.lines)
+        node.parse_lines()
+
     return nodes
 
 
@@ -57,15 +59,23 @@ def update_output_table(nodes, pipes):
     Iterates through every node and updates """
 
 
+def simulate_next_frame(nodes, frame_counter):
+    print(Fore.LIGHTBLUE_EX + "*starting frame ", frame_counter)
+    print(Style.RESET_ALL, end='')
+    for node in nodes:
+        node.execute_next()
+        print(Fore.LIGHTRED_EX + str(node))
+        print(Style.RESET_ALL, end='')
+
+
 def simulate():
     nodes = load_nodes("nodes.txt")
     #nodes = [Node(x, y) for x in range(COLUMNS) for y in range(ROWS)]
 
     build_io_tables(nodes)
 
-    for node in nodes:
-        # node.print_adjacency()
-        node.execute_next()
+    for i in range(10):
+        simulate_next_frame(nodes, i)
 
 
 if __name__ == "__main__":

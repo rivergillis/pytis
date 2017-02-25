@@ -55,8 +55,8 @@ class Node(object):
         """ Validates that instructions are
         syntactically correct
         """
-        # iterate through every instruction in lines
-        for instruction in self.lines:
+        # iterate through every instruction in code
+        for instruction in self.code:
             instruct_len = 0
             args = []
             # get the length of the instruction in args
@@ -66,26 +66,31 @@ class Node(object):
                     instruct_len += 1
             # the first arg is the opcode
             opcode = instruction[0]
+            # print(self.code)
+            # print(instruction)
+            # print(opcode)
 
             # invalid if any argcount is not correct
             if (Node.VALID_INSTRUCTIONS.get(opcode, -1) != instruct_len):
+                print("length mismatch!")
                 self.is_valid = False
                 return
             # ADD/SUB needs a register or a number
             if (opcode == "ADD" or opcode == "SUB"):
-                if (type(args[0]) == int):
+                if (type(args[1]) == int):
                     continue
-                elif (args[0] not in Node.VALID_REGISTERS):
+                elif (args[1] not in Node.VALID_REGISTERS):
+
                     self.is_valid = False
                     return
             # MOV needs a register
             elif (opcode == "MOV"):
-                if (args[0] not in Node.VALID_REGISTERS or args[1] not in Node.VALID_REGISTERS):
+                if (args[1] not in Node.VALID_REGISTERS or args[2] not in Node.VALID_REGISTERS):
                     self.is_valid = False
                     return
             # J needs a label
             elif (opcode.startswith("J")):
-                if (args[0] not in self.labels):
+                if (args[1] not in self.labels):
                     self.is_valid = False
                     return
 

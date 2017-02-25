@@ -49,7 +49,7 @@ class Node(object):
                           "RIGHT": None, "UP": None, "DOWN": None}
 
         self.pc = 0  # program counter
-        print("Created Node at ", xpos, ypos)
+        #print("Created Node at ", xpos, ypos)
 
     def validate_code(self):
         """ Validates that instructions are
@@ -132,7 +132,7 @@ class Node(object):
         instruction = self.code[self.pc]
         opcode = instruction[0]
 
-        print(instruction)
+        # print(instruction)
 
         if (opcode == "ADD"):
             self.add(instruction[1])

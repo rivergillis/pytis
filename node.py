@@ -80,7 +80,6 @@ class Node(object):
                 if (type(args[1]) == int):
                     continue
                 elif (args[1] not in Node.VALID_REGISTERS):
-
                     self.is_valid = False
                     return
             # MOV needs a register
@@ -134,12 +133,17 @@ class Node(object):
 
         # print(instruction)
 
+        # Ties opcodes to functions
         if (opcode == "ADD"):
             self.add(instruction[1])
         elif (opcode == "SUB"):
             self.sub(instruction[1])
         elif (opcode == "NEG"):
             self.neg()
+        elif (opcode == "SAV"):
+            self.sav()
+        elif (opcode == "SWP"):
+            self.swp()
 
         # increment pc and set to start if we've gotten to the end
         self.pc += 1
@@ -164,6 +168,12 @@ class Node(object):
         syntax: SAV
         """
         self.bak = self.acc
+
+    def swp(self):
+        """ The value of BAK is written to the ACC
+        syntax: SWP
+        """
+        self.acc = self.bak
 
     def add(self, val):
         """ Adds a value to the accumulator

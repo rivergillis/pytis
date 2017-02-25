@@ -58,6 +58,22 @@ class TestNodes(unittest.TestCase):
         n.execute_next()
         self.assertEqual(n.acc, 50)
 
+    def test_sav_swp(self):
+        n = Node(0, 0)
+        n.lines = ["ADD 20", "SAV", "ADD 50", "SWP"]
+        n.parse_lines()
+        self.assertTrue(n.is_valid)
+        n.execute_next()
+        n.execute_next()
+        self.assertEqual(n.bak, n.acc)
+        self.assertEqual(n.bak, 20)
+        n.execute_next()
+        self.assertNotEqual(n.bak, n.acc)
+        self.assertEqual(n.bak, 20)
+        n.execute_next()
+        self.assertEqual(n.bak, n.acc)
+        self.assertEqual(n.bak, 20)
+
 
 if __name__ == '__main__':
     unittest.main()

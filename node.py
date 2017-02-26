@@ -18,10 +18,17 @@ class Node(object):
     the input in clockwise fashion (0 being up, 3 being left)
     output is handled in the same fashion
 
-    The call stack is a list of triplets where the first term is
-    the instruction and the next two terms are arguments, for instructions with
-    less than two arguments, the extra fields are None.
-    Arguments are stored as numeric types when possible.
+    code contains a dict of tuples representing instructions parsed from lines
+        each code is a 3-tuple containing three 'arguments'
+        The first argument is the opcode, representing which operation to execute
+        The next two arguments are used for registers or immediates to the opcode
+            Any empty argument space is set to None
+        The keys for the code dict correspond to the line number
+            This is necessary as labels will cause an offset between list index and actual line number
+            This is used in conjuction with the program conter to determine which instruction to execute
+
+    labels contains a dict of string->integer pairs
+        The string is the label, and the integer is the corresponding line number
     """
 
     VALID_INSTRUCTIONS = dict([("NOP", 1), ("MOV", 3), ("SWP", 1), ("SAV", 1),
@@ -41,7 +48,7 @@ class Node(object):
         self.last = None
         self.mode = None
         self.lines = list()
-        self.code = list()
+        self.code = dict()
         self.call_stack = list()
         self.labels = dict()
         self.is_valid = True
@@ -56,7 +63,7 @@ class Node(object):
         syntactically correct
         """
         # iterate through every instruction in code
-        for instruction in self.code:
+        for instruction in self.code.values():
             instruct_len = 0
             args = []
             # get the length of the instruction in args
@@ -94,7 +101,6 @@ class Node(object):
                     return
 
     def parse_lines(self):
-        self.code = list()
         """ Parses the string lines to be
             placed onto the call stack
             note: doesn't support multiple spaces yet
@@ -127,19 +133,33 @@ class Node(object):
                         instruction += (int(args[i]),)
                     except ValueError:
                         instruction += (args[i],)
-            self.code.append(instruction)
+            self.code[line_num] = instruction
         self.validate_code()
+
+    def increment_pc(self):
+        """ Updates the pc according to the current status of
+            the pc and the number of lines of code we have
+        """
+        # Increase if we have some code
+        if (self.code):
+            self.pc += 1
+        # If our current line number is >= max line nums, reset pc
+        if (self.pc >= len(self.lines)):
+            self.pc = 0
 
     def execute_next(self):
         """ Executes the next instruction
             that the program counter points to
         """
         # return if empty node
-        if (not self.code):
+        instruction = self.code.get(self.pc, False)
+        if (instruction == False):
+            # If we have some code, then this is a label and we need to increment pc
+            # if timing is in error, call execute_next() again here
+            self.increment_pc()
             return
 
         # grab the next instruction
-        instruction = self.code[self.pc]
         opcode = instruction[0]
 
         # print(instruction)
@@ -156,10 +176,7 @@ class Node(object):
         elif (opcode == "SWP"):
             self.swp()
 
-        # increment pc and set to start if we've gotten to the end
-        self.pc += 1
-        if (self.pc >= len(self.code)):
-            self.pc = 0
+        self.increment_pc()
 
     def send_output(self, node):
         """ Returns an output to another

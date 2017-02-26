@@ -15,3 +15,4 @@ another_label:
 SUB 3
 ADD:
 ADD 5
+SUB:

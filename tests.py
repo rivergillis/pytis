@@ -15,7 +15,7 @@ class TestNodes(unittest.TestCase):
         n.lines = ["ADD 1"]
         n.parse_lines()
         self.assertTrue(n.is_valid)
-        self.assertEqual(n.code, [("ADD", 1, None)])
+        self.assertEqual(n.code, {0: ("ADD", 1, None)})
 
     def test_add_i_and_pc(self):
         n = Node(0, 0)

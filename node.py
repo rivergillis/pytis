@@ -79,7 +79,10 @@ class Node(object):
 
             # invalid if any argcount is not correct
             if (Node.VALID_INSTRUCTIONS.get(opcode, -1) != instruct_len):
-                print("length mismatch!")
+                print("length mismatch!", opcode)
+                print("length ", instruct_len, " expected ",
+                      Node.VALID_INSTRUCTIONS.get(opcode, -1))
+                print(instruction)
                 self.is_valid = False
                 return
             # ADD/SUB needs a register or a number
@@ -97,6 +100,7 @@ class Node(object):
             # J needs a label
             elif (opcode.startswith("J")):
                 if (args[1] not in self.labels.keys()):
+                    print('label ', args[1], ' not in labels dict')
                     self.is_valid = False
                     return
 
@@ -179,6 +183,21 @@ class Node(object):
         elif (opcode == "JMP"):
             self.jmp(instruction[1])
             return
+        elif (opcode == "JEZ"):
+            self.jez(instruction[1])
+            return
+        elif (opcode == "JNZ"):
+            self.jnz(instruction[1])
+            return
+        elif (opcode == "JLZ"):
+            self.jlz(instruction[1])
+            return
+        elif (opcode == "JGZ"):
+            self.jgz(instruction[1])
+            return
+        # elif (opcode == "JRO"):
+        #    self.jro(instruction[1])
+        #    return
 
         self.increment_pc()
 
@@ -240,6 +259,42 @@ class Node(object):
         label *label* resides.
         syntax: JMP <l> where l is a label """
         self.pc = self.labels[label]
+
+    def jez(self, label):
+        """ Jumps to label if acc is equal to Zero
+        syntax: JEZ <l>
+        """
+        if (self.acc == 0):
+            self.jmp(label)
+        else:
+            self.increment_pc()
+
+    def jnz(self, label):
+        """ Jumps to label if acc is not equal to zero
+        syntax: JNZ <l>
+        """
+        if (self.acc != 0):
+            self.jmp(label)
+        else:
+            self.increment_pc()
+
+    def jlz(self, label):
+        """ Jumps to label is acc is less than zero
+        syntax: JLZ <l>
+        """
+        if (self.acc < 0):
+            self.jmp(label)
+        else:
+            self.increment_pc()
+
+    def jgz(self, label):
+        """ Jumps to label is acc is greater than zero
+        syntax: JGZ <l>
+        """
+        if (self.acc > 0):
+            self.jmp(label)
+        else:
+            self.increment_pc()
 
     def __str__(self):
         s = "Node at (" + str(self.xpos) + "," + str(self.ypos) + ")"

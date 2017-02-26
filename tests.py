@@ -110,6 +110,37 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.pc, 3)
         self.assertEqual(n.acc, -2035)
 
+    def test_jez_jnz(self):
+        n = Node(0, 0)
+        n.lines = ["JNZ label", "JEZ label", "ADD 1",
+                   "label:", "ADD 5", "JEZ label", "JNZ label"]
+        n.parse_lines()
+        self.assertTrue(n.is_valid)
+        n.execute_next()
+        n.execute_next()
+        self.assertEqual(n.pc, 3)
+        self.assertEqual(n.acc, 0)
+        for i in range(4):
+            n.execute_next()
+        self.assertEqual(n.pc, 3)
+        self.assertNotEqual(n.acc, 0)
+
+    def test_jgz_jlz(self):
+        n = Node(0, 0)
+        n.lines = ["JGZ label", "JLZ label", "ADD 20", "label:", "NEG"]
+        n.parse_lines()
+        self.assertTrue(n.is_valid)
+        for i in range(6):  # execute JGZ when acc=-20
+            n.execute_next()
+        self.assertEqual(n.pc, 1)
+        self.assertLess(n.acc, 0)
+        n.execute_next()
+        self.assertEqual(n.pc, 3)
+        for i in range(3):
+            n.execute_next()  # execute JGZ when acc=20
+        self.assertEqual(n.pc, 3)
+        self.assertGreater(n.acc, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

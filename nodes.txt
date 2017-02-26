@@ -13,6 +13,7 @@ Label:
 ADD 5
 another_label:
 SUB 3
+JMP another_label
 ADD:
 ADD 5
 SUB:

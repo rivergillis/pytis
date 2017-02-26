@@ -96,7 +96,7 @@ class Node(object):
                     return
             # J needs a label
             elif (opcode.startswith("J")):
-                if (args[1] not in self.labels):
+                if (args[1] not in self.labels.keys()):
                     self.is_valid = False
                     return
 
@@ -109,7 +109,7 @@ class Node(object):
         for line_num, line in enumerate(self.lines):
             # This is a label on a line by itself
             if (line.strip().endswith(':')):
-                stripped = line.strip()
+                stripped = line.strip().replace(':', '')
                 # If we redefine a label, this is invalid code
                 if (self.labels.get(stripped, False)):
                     self.is_valid = False
@@ -175,6 +175,10 @@ class Node(object):
             self.sav()
         elif (opcode == "SWP"):
             self.swp()
+        # Jumping args should return so we don't mess with the pc
+        elif (opcode == "JMP"):
+            self.jmp(instruction[1])
+            return
 
         self.increment_pc()
 
@@ -230,6 +234,12 @@ class Node(object):
         syntax: NEG
         """
         self.acc *= -1
+
+    def jmp(self, label):
+        """ Changes the pc to point to the line on which the
+        label *label* resides.
+        syntax: JMP <l> where l is a label """
+        self.pc = self.labels[label]
 
     def __str__(self):
         s = "Node at (" + str(self.xpos) + "," + str(self.ypos) + ")"

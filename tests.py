@@ -74,6 +74,42 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.bak, n.acc)
         self.assertEqual(n.bak, 20)
 
+    def test_labels_full_line(self):
+        n = Node(0, 0)
+        n.lines = ["ADD 5", "label:", "SUB 20", "labeltwo:"]
+        n.parse_lines()
+        self.assertTrue(n.is_valid)
+        n.execute_next()
+        n.execute_next()
+        self.assertEqual(n.pc, 2)
+        self.assertEqual(n.acc, 5)
+        n.execute_next()
+        self.assertEqual(n.pc, 3)
+        n.execute_next()
+        self.assertEqual(n.pc, 0)
+        self.assertEqual(n.acc, -15)
+
+    def test_jmp(self):
+        n = Node(0, 0)
+        n.lines = ["ADD 5", "label:", "SUB 20",
+                   "labeltwo:", "JMP label", "ADD 20"]
+        n.parse_lines()
+        self.assertTrue(n.is_valid)
+        for i in range(4):
+            n.execute_next()
+        self.assertEqual(n.pc, 4)
+        self.assertEqual(n.acc, -15)
+        n.execute_next()
+        self.assertEqual(n.pc, 1)
+        n.execute_next()
+        n.execute_next()  # execute SUB 20
+        self.assertEqual(n.pc, 3)
+        self.assertEqual(n.acc, -35)
+        for i in range(400):
+            n.execute_next()
+        self.assertEqual(n.pc, 3)
+        self.assertEqual(n.acc, -2035)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -141,6 +141,16 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.pc, 3)
         self.assertGreater(n.acc, 0)
 
+    def test_nop(self):
+        n = Node(0, 0)
+        n.lines = ["ADD 20", "NOP", "NOP", "ADD 20"]
+        n.parse_lines()
+        self.assertTrue(n.is_valid)
+        for i in range(4):
+            n.execute_next()
+        self.assertEqual(n.acc, 40)
+        self.assertEqual(n.pc, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

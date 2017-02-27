@@ -179,6 +179,7 @@ class Node(object):
             self.sav()
         elif (opcode == "SWP"):
             self.swp()
+
         # Jumping args should return so we don't mess with the pc
         elif (opcode == "JMP"):
             self.jmp(instruction[1])
@@ -195,9 +196,13 @@ class Node(object):
         elif (opcode == "JGZ"):
             self.jgz(instruction[1])
             return
-        # elif (opcode == "JRO"):
-        #    self.jro(instruction[1])
-        #    return
+        elif (opcode == "JRO"):
+            # TODO
+            return
+
+        elif (opcode == "NOP"):
+            self.increment_pc()  # Skip this instruction. Consider changing to ADD NIL
+            return
 
         self.increment_pc()
 

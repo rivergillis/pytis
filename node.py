@@ -85,8 +85,8 @@ class Node(object):
                 print(instruction)
                 self.is_valid = False
                 return
-            # ADD/SUB needs a register or a number
-            if (opcode == "ADD" or opcode == "SUB"):
+            # ADD/SUB needs a register or a number, as does JRO
+            if (opcode == "ADD" or opcode == "SUB" or opcode == "JRO"):
                 if (type(args[1]) == int):
                     continue
                 elif (args[1] not in Node.VALID_REGISTERS):
@@ -197,7 +197,7 @@ class Node(object):
             self.jgz(instruction[1])
             return
         elif (opcode == "JRO"):
-            # TODO
+            self.jro(instruction[1])
             return
 
         elif (opcode == "NOP"):
@@ -300,6 +300,24 @@ class Node(object):
             self.jmp(label)
         else:
             self.increment_pc()
+
+    def jro(self, target):
+        """ Jumps to the offset specified by target
+        syntax: JRO <t> where t can be an integer or a register
+        Ex: JRO 0 halts execution
+            JRO 2 skips the next instruction
+            JRO -1 executes the previous instruction next
+            JRO ACC uses the value in ACC to specify the offset
+        """
+        if (type(target) == int):
+            self.pc += target
+        elif (target == "ACC"):
+            self.pc += self.acc
+            # TODO: account for sending the pc over the max lines of code (and
+            # under!)
+        else:
+            # TODO: add support for UP/DOWN/etc
+            pass
 
     def __str__(self):
         s = "Node at (" + str(self.xpos) + "," + str(self.ypos) + ")"

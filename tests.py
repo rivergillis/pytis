@@ -151,6 +151,25 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.acc, 40)
         self.assertEqual(n.pc, 0)
 
+    def test_jro(self):
+        n = Node(0, 0)
+        n.lines = ["ADD 2", "JRO ACC", "NOP",
+                   "JRO -3", "NOP", "JRO -5", "NOP", "SUB 6"]
+        n.parse_lines()
+        self.assertTrue(n.is_valid)
+        n.execute_next()
+        n.execute_next()
+        self.assertEqual(n.acc, 2)
+        self.assertEqual(n.pc, 3)
+        for i in range(3):
+            n.execute_next()
+        self.assertEqual(n.acc, 4)
+        self.assertEqual(n.pc, 5)
+        for i in range(3):
+            n.execute_next()
+        self.assertEqual(n.acc, 6)
+        self.assertEqual(n.pc, 7)
+
 
 if __name__ == '__main__':
     unittest.main()

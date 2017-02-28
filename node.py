@@ -100,9 +100,9 @@ class Node(object):
                 elif (args[1] not in Node.VALID_REGISTERS):
                     self.is_valid = False
                     return
-            # MOV needs a register
+            # MOV needs a register (but the first arg can be numeric)
             elif (opcode == "MOV"):
-                if (args[1] not in Node.VALID_REGISTERS or args[2] not in Node.VALID_REGISTERS):
+                if ((type(args[1]) != int and args[1] not in Node.VALID_REGISTERS) or args[2] not in Node.VALID_REGISTERS):
                     self.is_valid = False
                     return
             # J needs a label
@@ -165,10 +165,16 @@ class Node(object):
             Return value_to_send if successful
             Return None if the node we send to is not receiving from us
         """
+        print("In send_value for ", str(self))
+        print("We want to send to ", str(self.sending))
         # check if the node we are sending to is receiving from us
         if ((self.sending.receiving == self) and (self.value_to_send)):
             return self.value_to_send
         else:
+            if (not self.sending.receiving == self):
+                print("The node we're sending to is not receiving us!")
+            else:
+                print("We don't have a value to send!")
             return None
 
     def receive_value(self):
@@ -179,10 +185,13 @@ class Node(object):
             Idea: a node loops on a mov until it is succesful
                 upon success, increment the pc
         """
+        print("In receive_value() for ", str(self))
+        print("We want to receive from ", str(self.receiving))
         # have to check if the node we receive from is sending to us
         if (self.receiving.sending == self):
             # get the value from the other node
             value = self.receiving.send_value()
+            print("got ", value, " from our receiving node")
 
             if (not value):  # The node is sending but does not have its value ready yet
                 return False
@@ -206,6 +215,7 @@ class Node(object):
             return True
         else:
             # the other node is not sending to us
+            print("Our node we want to receive from is not sending to us!")
             return False
 
     def execute_next(self):
@@ -216,6 +226,10 @@ class Node(object):
             self.receive_value()
 
         if (self.receiving or self.sending):
+            if (self.receiving):
+                print("Currently receiving in execute_next(), now returning")
+            if (self.sending):
+                print("Currently sending in execute_next(), now returning")
             return
         # if (self.receiving or self.sending):
         # return  # we don't do anything if IO is happening TODO: but we
@@ -280,23 +294,35 @@ class Node(object):
         if reg2 is a port (U/D/L/R) we send to that Node
         syntax: MOV <r1, r2> for registers r1 and r2
         """
+        print("Executing mov on node ", str(self),
+              " with reg1=", reg1, " reg2=", reg2)
         if reg1 in self.adjacency.keys():
             # This is a node we need to receive from
             self.receiving = self.adjacency[reg1]
-            # somehow set our send value
+            print("we need to receive from ", str(self.receiving))
+            # somehow set our send value?
         else:
             # This is this node's registers (ACC,etc)
             if reg1 == "ACC":
-                self.send_value = self.acc
+                self.value_to_send = self.acc
+                print("received from ACC, now sending value ", self.value_to_send)
+            # Or reg1 was a literal
+            elif type(reg1) == int:
+                self.value_to_send = reg1
+                print("received from literal, now sending value ",
+                      self.value_to_send)
 
         if reg2 in self.adjacency.keys():
             # This is a node we need to send to
             self.sending = self.adjacency[reg2]
+            print("now sending to ", str(self.sending))
         else:
             # This is this node's registers (ACC, etc)
             if reg2 == "ACC":
                 self.receiving_into_acc = True
+                print("Set to receive into our ACC")
 
+        print("initial mov call finished on ", str(self))
         self.execute_next()  # we need to use one extra clock cycle
 
     def sav(self):

@@ -1,12 +1,8 @@
 [0,0]
-ADD 1
+MOV 1, DOWN
 
 [0,1]
-ADD 5
-SAV
-ADD 300
-SWP
-ADD 3
+MOV UP, ACC
 
 [1,0]
 Label:

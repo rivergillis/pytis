@@ -61,7 +61,10 @@ class Node(object):
         # if either is None, we are not sending or receiving from anyone
         self.sending = None
         self.receiving = None
-        #print("Created Node at ", xpos, ypos)
+
+        self.receiving_into_acc = False
+        self.value_to_send = None
+        # print("Created Node at ", xpos, ypos)
 
     def validate_code(self):
         """ Validates that instructions are
@@ -158,16 +161,17 @@ class Node(object):
 
     def send_value(self):
         """ Sends a value from the self node to the sending node
+            This is only called by the receiving node!
             Return value_to_send if successful
             Return None if the node we send to is not receiving from us
         """
         # check if the node we are sending to is receiving from us
-        if (self.sending.receiving == self):
+        if ((self.sending.receiving == self) and (self.value_to_send)):
             return self.value_to_send
         else:
             return None
 
-    def receive_value(self, reg):
+    def receive_value(self):
         """ Receives a value from node receiving into register reg
             If the other node is not sending, return False
                 Otherwise receive the value and return True
@@ -179,12 +183,26 @@ class Node(object):
         if (self.receiving.sending == self):
             # get the value from the other node
             value = self.receiving.send_value()
+
+            if (not value):  # The node is sending but does not have its value ready yet
+                return False
+
+            # The node we received from is now no longer sending to anyone
+            self.receiving.sending = None
+            self.receiving.value_to_send = None
+
+            # This node is no longer receiving from anyone
+            self.receiving = None
+
             # assign the value to the correct register
-            if (reg == "ACC"):
+            if (self.receiving_into_acc):
+                # we are sending this value to our acc
                 self.acc = value
+                self.receiving_into_acc = False
             else:
+                # We are sending this value to another node
+                self.value_to_send = value
                 # TODO: add in the rest of the registers
-                pass
             return True
         else:
             # the other node is not sending to us
@@ -196,6 +214,9 @@ class Node(object):
         """
         if (self.receiving):
             self.receive_value()
+
+        if (self.receiving or self.sending):
+            return
         # if (self.receiving or self.sending):
         # return  # we don't do anything if IO is happening TODO: but we
         # should, right?
@@ -244,24 +265,39 @@ class Node(object):
             self.jro(instruction[1])
             return
 
+        elif (opcode == "MOV"):
+            self.mov(instruction[1], instruction[2])
+
         elif (opcode == "NOP"):
             self.increment_pc()  # Skip this instruction. Consider changing to ADD NIL
             return
 
         self.increment_pc()
 
-    def send_output(self, node):
-        """ Returns an output to another
-        node
+    def mov(self, reg1, reg2):
+        """ Moves the value from reg1 into reg2
+        if reg1 is a port (U/D/L/R) we receive from that Node
+        if reg2 is a port (U/D/L/R) we send to that Node
+        syntax: MOV <r1, r2> for registers r1 and r2
         """
-        return self.outputs[node]
+        if reg1 in self.adjacency.keys():
+            # This is a node we need to receive from
+            self.receiving = self.adjacency[reg1]
+            # somehow set our send value
+        else:
+            # This is this node's registers (ACC,etc)
+            if reg1 == "ACC":
+                self.send_value = self.acc
 
-    def get_input(self, node):
-        """ Calls another node's
-        get_output method to request an output
-        from another node
-        """
-        return node.send_output(self)
+        if reg2 in self.adjacency.keys():
+            # This is a node we need to send to
+            self.sending = self.adjacency[reg2]
+        else:
+            # This is this node's registers (ACC, etc)
+            if reg2 == "ACC":
+                self.receiving_into_acc = True
+
+        self.execute_next()  # we need to use one extra clock cycle
 
     def sav(self):
         """ The value of ACC is written to BAK

@@ -170,6 +170,25 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.acc, 6)
         self.assertEqual(n.pc, 7)
 
+    def test_send_receive(self):
+        n1 = Node(0, 0)
+        n2 = Node(0, 1)
+
+        n1.value_to_send = 52
+        n1.sending = n2
+        n2.receiving = n1
+        n2.receiving_into_acc = True
+
+        self.assertEqual(n2.acc, 0)
+        n2.receive_value()
+
+        self.assertEqual(n2.acc, 52)
+
+        self.assertIsNone(n1.value_to_send)
+        self.assertIsNone(n1.sending)
+        self.assertIsNone(n2.receiving)
+        self.assertFalse(n2.receiving_into_acc)
+
 
 if __name__ == '__main__':
     unittest.main()

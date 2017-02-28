@@ -56,6 +56,11 @@ class Node(object):
                           "RIGHT": None, "UP": None, "DOWN": None}
 
         self.pc = 0  # program counter
+
+        # sending/receiving point to a Node that we are sending/receiving to/from
+        # if either is None, we are not sending or receiving from anyone
+        self.sending = None
+        self.receiving = None
         #print("Created Node at ", xpos, ypos)
 
     def validate_code(self):
@@ -151,11 +156,50 @@ class Node(object):
         if (self.pc >= len(self.lines)):
             self.pc = 0
 
+    def send_value(self):
+        """ Sends a value from the self node to the sending node
+            Return value_to_send if successful
+            Return None if the node we send to is not receiving from us
+        """
+        # check if the node we are sending to is receiving from us
+        if (self.sending.receiving == self):
+            return self.value_to_send
+        else:
+            return None
+
+    def receive_value(self, reg):
+        """ Receives a value from node receiving into register reg
+            If the other node is not sending, return False
+                Otherwise receive the value and return True
+
+            Idea: a node loops on a mov until it is succesful
+                upon success, increment the pc
+        """
+        # have to check if the node we receive from is sending to us
+        if (self.receiving.sending == self):
+            # get the value from the other node
+            value = self.receiving.send_value()
+            # assign the value to the correct register
+            if (reg == "ACC"):
+                self.acc = value
+            else:
+                # TODO: add in the rest of the registers
+                pass
+            return True
+        else:
+            # the other node is not sending to us
+            return False
+
     def execute_next(self):
         """ Executes the next instruction
             that the program counter points to
         """
-        # return if empty node
+        if (self.receiving):
+            self.receive_value()
+        # if (self.receiving or self.sending):
+        # return  # we don't do anything if IO is happening TODO: but we
+        # should, right?
+
         instruction = self.code.get(self.pc, False)
         if (instruction == False):
             # If we have some code, then this is a label and we need to increment pc

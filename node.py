@@ -41,6 +41,8 @@ class Node(object):
 
     # TODO: Create a static enum for modes
     def __init__(self, xpos, ypos):
+        self.full_debug = False
+
         self.xpos = xpos
         self.ypos = ypos
         self.acc = 0
@@ -165,10 +167,11 @@ class Node(object):
             Return value_to_send if successful
             Return None if the node we send to is not receiving from us
         """
-        print("In send_value for ", str(self))
+        print("In send_value() for ", str(self))
         print("We want to send to ", str(self.sending))
         # check if the node we are sending to is receiving from us
         if ((self.sending.receiving == self) and (self.value_to_send)):
+            self.increment_pc()  # we are done after any send
             return self.value_to_send
         else:
             if (not self.sending.receiving == self):
@@ -208,6 +211,9 @@ class Node(object):
                 # we are sending this value to our acc
                 self.acc = value
                 self.receiving_into_acc = False
+                # if we receive into the acc, we are done and can move the pc
+                # up
+                self.increment_pc()
             else:
                 # We are sending this value to another node
                 self.value_to_send = value
@@ -222,8 +228,18 @@ class Node(object):
         """ Executes the next instruction
             that the program counter points to
         """
+        if (self.full_debug):
+            print("Entering execute_next() for node ", self)
+
         if (self.receiving):
             self.receive_value()
+            # If we succesfully receive, we want to increment the PC, but only
+            # if we are not sending
+            if (not self.receiving):
+                # if (not self.sending):
+                #    print("Succesfully completed a MOV onto ", self)
+                #    self.increment_pc()
+                return
 
         if (self.receiving or self.sending):
             if (self.receiving):
@@ -281,6 +297,7 @@ class Node(object):
 
         elif (opcode == "MOV"):
             self.mov(instruction[1], instruction[2])
+            return
 
         elif (opcode == "NOP"):
             self.increment_pc()  # Skip this instruction. Consider changing to ADD NIL

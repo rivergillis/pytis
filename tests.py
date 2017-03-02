@@ -1,5 +1,6 @@
 import unittest
 from node import Node
+import main
 
 
 class TestNodes(unittest.TestCase):
@@ -188,6 +189,70 @@ class TestNodes(unittest.TestCase):
         self.assertIsNone(n1.sending)
         self.assertIsNone(n2.receiving)
         self.assertFalse(n2.receiving_into_acc)
+
+    def test_mov_no_delay(self):
+        n1 = Node(0, 0)  # upper node
+        n2 = Node(0, 1)  # lower node
+        n1.full_debug = True
+        n2.full_debug = True
+        nodes = [n1, n2]
+        main.build_io_tables(nodes)
+
+        n1.lines = ["MOV 2, DOWN", "NOP"]
+        n2.lines = ["MOV UP, ACC", "NOP"]
+        n1.parse_lines()
+        n2.parse_lines()
+
+        self.assertTrue(n1.is_valid)
+        self.assertTrue(n2.is_valid)
+
+        n1.execute_next()
+        self.assertIsNone(n1.receiving)  # n1 is not receiving
+        self.assertFalse(n1.receiving_into_acc)  # n1 is not receiving into acc
+        self.assertEqual(n1.sending, n2)  # n1 is sending to n2
+        self.assertEqual(n1.value_to_send, 2)  # n1 is sending the value 2
+        self.assertEqual(n1.acc, 0)
+        self.assertEqual(n1.pc, 0)  # pc not increased yet
+
+        # n2 has yet to do anything
+        self.assertIsNone(n2.receiving)
+        self.assertIsNone(n2.sending)
+        self.assertIsNone(n2.value_to_send)
+        self.assertFalse(n2.receiving_into_acc)
+        self.assertEqual(n2.acc, 0)
+        self.assertEqual(n2.pc, 0)
+
+        n2.execute_next()
+        self.assertIsNone(n2.receiving)  # n2 has fully received
+        self.assertFalse(n2.receiving_into_acc)
+        self.assertIsNone(n2.sending)
+        self.assertIsNone(n2.value_to_send)
+        self.assertEqual(n2.acc, 2)  # n2 has received 2 into its acc
+        self.assertEqual(n2.pc, 1)  # n2 has left the mov statement
+
+        # n1 has clean IO
+        self.assertIsNone(n1.receiving)
+        self.assertFalse(n1.receiving_into_acc)
+        self.assertIsNone(n1.sending)
+        self.assertIsNone(n1.value_to_send)
+        self.assertEqual(n1.acc, 0)
+        self.assertEqual(n1.pc, 1)
+
+        # no weird future effects, both have clean IO
+        n1.execute_next()
+        n2.execute_next()
+        self.assertEqual(n1.acc, 0)
+        self.assertEqual(n2.acc, 2)
+        self.assertIsNone(n1.sending)
+        self.assertIsNone(n1.receiving)
+        self.assertIsNone(n1.value_to_send)
+        self.assertFalse(n1.receiving_into_acc)
+        self.assertIsNone(n2.sending)
+        self.assertIsNone(n2.receiving)
+        self.assertIsNone(n2.value_to_send)
+        self.assertFalse(n2.receiving_into_acc)
+        self.assertEqual(n1.pc, 0)
+        self.assertEqual(n2.pc, 0)
 
 
 if __name__ == '__main__':

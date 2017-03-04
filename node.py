@@ -5,6 +5,10 @@
     sequentially (possibly twice over).
 """
 
+# TODO: currently the nodes are executed sequentially, which causes IO
+# problems due to IO revolving around receiving something. May need 2-pass
+# for MOV instructs in simulate next frame.
+
 
 class Node(object):
 

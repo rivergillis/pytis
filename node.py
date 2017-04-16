@@ -157,6 +157,9 @@ class Node(object):
     def increment_pc(self):
         """ Updates the pc according to the current status of
             the pc and the number of lines of code we have
+
+            If the line after incrementing the pc consists of only a label
+            we call increment_pc() again
         """
         # Increase if we have some code
         if (self.code):
@@ -164,6 +167,10 @@ class Node(object):
         # If our current line number is >= max line nums, reset pc
         if (self.pc >= len(self.lines)):
             self.pc = 0
+
+        # increment the pc again if the new line of code is only a label
+        if self.code.get(self.pc, False) == False:
+            self.increment_pc()
 
     def send_value(self):
         """ Sends a value from the self node to the sending node
@@ -256,6 +263,7 @@ class Node(object):
         # should, right?
 
         instruction = self.code.get(self.pc, False)
+        # print(instruction)
         if (instruction == False):
             # If we have some code, then this is a label and we need to increment pc
             # if timing is in error, call execute_next() again here

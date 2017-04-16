@@ -4,7 +4,7 @@ import main
 
 
 class TestNodes(unittest.TestCase):
-
+    """
     def test_make_node(self):
         n = Node(0, 0)
         self.assertEqual(n.xpos, 0)
@@ -102,22 +102,30 @@ class TestNodes(unittest.TestCase):
         n.execute_next()
         self.assertEqual(n.bak, n.acc)
         self.assertEqual(n.bak, 20)
+"""
 
-    def test_labels_full_line(self):
+    def test_labels_full_line_tis_accurate(self):
         n = Node(0, 0)
         n.lines = ["ADD 5", "label:", "SUB 20", "labeltwo:"]
         n.parse_lines()
         self.assertTrue(n.is_valid)
-        n.execute_next()
-        n.execute_next()
-        self.assertEqual(n.pc, 2)
-        self.assertEqual(n.acc, 5)
-        n.execute_next()
-        self.assertEqual(n.pc, 3)
-        n.execute_next()
-        self.assertEqual(n.pc, 0)
-        self.assertEqual(n.acc, -15)
 
+        n.execute_next()
+        # adds 5, pc now points to sub 20
+        self.assertEqual(n.acc, 5)
+        self.assertEqual(n.pc, 2)
+
+        n.execute_next()
+        # subs 20, pc now points to add 5
+        self.assertEqual(n.acc, -15)
+        self.assertEqual(n.pc, 0)
+
+        n.execute_next()
+        # adds 5, pc now points to sub 20
+        self.assertEqual(n.acc, -10)
+        self.assertEqual(n.pc, 2)
+
+    """
     def test_jmp_tis_accurate(self):
         n = Node(0, 0)
         n.lines = ["ADD 5", "label:", "SUB 20",
@@ -235,7 +243,7 @@ class TestNodes(unittest.TestCase):
 
     def test_send_receive(self):
         # note: this test is no longer accurate
-        """
+        
         n1 = Node(0, 0)
         n2 = Node(0, 1)
 
@@ -253,7 +261,7 @@ class TestNodes(unittest.TestCase):
         self.assertIsNone(n1.sending)
         self.assertIsNone(n2.receiving)
         self.assertFalse(n2.receiving_into_acc)
-        """
+        
         pass
 
     def test_mov_tis_accurate(self):
@@ -546,7 +554,7 @@ class TestNodes(unittest.TestCase):
         self.assertIsNone(n3.value_to_send)  # n3 no longer sending
         self.assertFalse(n3.receiving_into_acc)  # n3 not receiving into acc
 
-"""
+
     def test_mov_with_delay(self):
         n1 = Node(0, 0)  # upper left node
         n2 = Node(0, 1)  # lower left node

@@ -157,9 +157,6 @@ class Node(object):
     def increment_pc(self):
         """ Updates the pc according to the current status of
             the pc and the number of lines of code we have
-
-            If the line after incrementing the pc consists of only a label
-            we call increment_pc() again
         """
         # Increase if we have some code
         if (self.code):
@@ -168,8 +165,20 @@ class Node(object):
         if (self.pc >= len(self.lines)):
             self.pc = 0
 
-        # increment the pc again if the new line of code is only a label
-        if self.code.get(self.pc, False) == False:
+    def skip_labels(self):
+        """ increments the pc along until we find the next line of
+            code that does not consist solely of a label
+
+            if the current line of code has code (is not a label),
+            then we do nothing
+
+            if we do not find a valid line, do not change the pc
+        """
+        length = len(self.lines)
+        checked = 0
+        # keep incrementing the pc until we find a line that is not a label
+        while (self.code.get(self.pc, False) == False) and (checked < length):
+            checked += 1
             self.increment_pc()
 
     def send_value(self):
@@ -183,6 +192,7 @@ class Node(object):
         # check if the node we are sending to is receiving from us
         if ((self.sending.receiving == self) and (self.value_to_send)):
             self.increment_pc()  # we are done after any send
+            self.skip_labels()
             return self.value_to_send
         else:
             if (not self.sending.receiving == self):
@@ -225,6 +235,7 @@ class Node(object):
                 # if we receive into the acc, we are done and can move the pc
                 # up
                 self.increment_pc()
+                self.skip_labels()
             else:
                 # We are sending this value to another node
                 self.value_to_send = value
@@ -268,6 +279,7 @@ class Node(object):
             # If we have some code, then this is a label and we need to increment pc
             # if timing is in error, call execute_next() again here
             self.increment_pc()
+            self.skip_labels()
             return
 
         # grab the next instruction
@@ -313,9 +325,11 @@ class Node(object):
 
         elif (opcode == "NOP"):
             self.increment_pc()  # Skip this instruction. Consider changing to ADD NIL
+            self.skip_labels()
             return
 
         self.increment_pc()
+        self.skip_labels()
 
     def mov(self, reg1, reg2):
         """ Moves the value from reg1 into reg2
@@ -400,6 +414,12 @@ class Node(object):
         syntax: JMP <l> where l is a label """
         self.pc = self.labels[label]
 
+        # keep incrementing the pc until we find a line that is not a label
+        # increment the pc again if the new line of code is only a label
+        if self.code.get(self.pc, False) == False:
+            self.increment_pc()
+            self.skip_labels()
+
     def jez(self, label):
         """ Jumps to label if acc is equal to Zero
         syntax: JEZ <l>
@@ -408,6 +428,7 @@ class Node(object):
             self.jmp(label)
         else:
             self.increment_pc()
+            self.skip_labels()
 
     def jnz(self, label):
         """ Jumps to label if acc is not equal to zero
@@ -417,6 +438,7 @@ class Node(object):
             self.jmp(label)
         else:
             self.increment_pc()
+            self.skip_labels()
 
     def jlz(self, label):
         """ Jumps to label is acc is less than zero
@@ -426,6 +448,7 @@ class Node(object):
             self.jmp(label)
         else:
             self.increment_pc()
+            self.skip_labels()
 
     def jgz(self, label):
         """ Jumps to label is acc is greater than zero
@@ -435,6 +458,7 @@ class Node(object):
             self.jmp(label)
         else:
             self.increment_pc()
+            self.skip_labels()
 
     def jro(self, target):
         """ Jumps to the offset specified by target

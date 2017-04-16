@@ -4,7 +4,7 @@ import main
 
 
 class TestNodes(unittest.TestCase):
-    """
+
     def test_make_node(self):
         n = Node(0, 0)
         self.assertEqual(n.xpos, 0)
@@ -102,7 +102,6 @@ class TestNodes(unittest.TestCase):
         n.execute_next()
         self.assertEqual(n.bak, n.acc)
         self.assertEqual(n.bak, 20)
-"""
 
     def test_labels_full_line_tis_accurate(self):
         n = Node(0, 0)
@@ -125,7 +124,6 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.acc, -10)
         self.assertEqual(n.pc, 2)
 
-    """
     def test_jmp_tis_accurate(self):
         n = Node(0, 0)
         n.lines = ["ADD 5", "label:", "SUB 20",
@@ -157,6 +155,7 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.acc, -35)
         self.assertEqual(n.pc, 4)
 
+    """
     def test_jmp(self):
         # note: this test is no longer accurate
         n = Node(0, 0)

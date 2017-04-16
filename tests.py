@@ -172,7 +172,7 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.pc, 4)
         self.assertEqual(n.acc, 5)
 
-    def test_jgz_jlz(self):
+    def test_jgz_jlz_tis_accurate(self):
         n = Node(0, 0)
         n.lines = ["JGZ label", "JLZ label", "ADD 20", "label:", "NEG"]
         n.parse_lines()
@@ -205,6 +205,64 @@ class TestNodes(unittest.TestCase):
             n.execute_next()
         self.assertEqual(n.acc, 40)
         self.assertEqual(n.pc, 0)
+
+    def test_jro_tis_accurate(self):
+        n = Node(0, 0)
+        n.lines = ["ADD 2", "LABEL:", "JRO ACC", "NOP",
+                   "LABEL2:", "JRO -3", "NEG", "JRO ACC"]
+        n.parse_lines()
+        self.assertTrue(n.is_valid)
+
+        n.execute_next()
+        self.assertEqual(n.pc, 2)
+        self.assertEqual(n.acc, 2)
+
+        n.execute_next()
+        # n jumps over the next (2-1=1) lines of code (LABEL: is not a LOC) to
+        # JRO
+        self.assertEqual(n.pc, 5)
+        self.assertEqual(n.acc, 2)
+
+        n.execute_next()
+        # n jumps back over (3-1=2) lines of code to ADD 2
+        self.assertEqual(n.pc, 0)
+        self.assertEqual(n.acc, 2)
+
+        n.execute_next()
+        # n adds 2 and skips over the next label
+        self.assertEqual(n.pc, 2)
+        self.assertEqual(n.acc, 4)
+
+        n.execute_next()
+        # n jumps over (4-1=3) LOC to JRO ACC
+        self.assertEqual(n.pc, 7)
+        self.assertEqual(n.acc, 4)
+
+        n.execute_next()
+        # n cannot jump another further! infinite loop
+        self.assertEqual(n.pc, 7)
+        self.assertEqual(n.acc, 4)
+
+    def test_jro_negbounds_zero(self):
+        n = Node(0, 0)
+        n0 = Node(0, 1)
+        n.lines = ["NOP", "JRO -3", "NOP"]
+        n0.lines = ["NOP", "JRO 0", "NOP"]
+        n.parse_lines()
+        n0.parse_lines()
+        self.assertTrue(n.is_valid)
+        self.assertTrue(n0.is_valid)
+
+        n.execute_next()
+        n0.execute_next()
+
+        n.execute_next()
+        # n tries to jump below bounds, gets to NOP
+        self.assertEqual(n.pc, 0)
+
+        n0.execute_next()
+        # n0 tried to jump over 0 instructs, lands back on JRO
+        self.assertEqual(n0.pc, 0)
 
 """
     def test_jro(self):

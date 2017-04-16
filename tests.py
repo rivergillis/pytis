@@ -155,44 +155,23 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.acc, -35)
         self.assertEqual(n.pc, 4)
 
-    """
-    def test_jmp(self):
-        # note: this test is no longer accurate
-        n = Node(0, 0)
-        n.lines = ["ADD 5", "label:", "SUB 20",
-                   "labeltwo:", "JMP label", "ADD 20"]
-        n.parse_lines()
-        self.assertTrue(n.is_valid)
-        for i in range(4):
-            n.execute_next()
-        self.assertEqual(n.pc, 4)
-        self.assertEqual(n.acc, -15)
-        n.execute_next()
-        self.assertEqual(n.pc, 1)
-        n.execute_next()
-        n.execute_next()  # execute SUB 20
-        self.assertEqual(n.pc, 3)
-        self.assertEqual(n.acc, -35)
-        for i in range(400):
-            n.execute_next()
-        self.assertEqual(n.pc, 3)
-        self.assertEqual(n.acc, -2035)
-
-    def test_jez_jnz(self):
-        # note: this test is no longer accurate
+    def test_jez_jnz_tis_accurate(self):
         n = Node(0, 0)
         n.lines = ["JNZ label", "JEZ label", "ADD 1",
                    "label:", "ADD 5", "JEZ label", "JNZ label"]
         n.parse_lines()
         self.assertTrue(n.is_valid)
+
         n.execute_next()
         n.execute_next()
-        self.assertEqual(n.pc, 3)
+        self.assertEqual(n.pc, 4)
         self.assertEqual(n.acc, 0)
-        for i in range(4):
+
+        for i in range(3):
             n.execute_next()
-        self.assertEqual(n.pc, 3)
-        self.assertNotEqual(n.acc, 0)
+        self.assertEqual(n.pc, 4)
+        self.assertEqual(n.acc, 5)
+    """
 
     def test_jgz_jlz(self):
         # note: this test is no longer accurate

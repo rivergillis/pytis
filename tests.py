@@ -118,6 +118,37 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.pc, 0)
         self.assertEqual(n.acc, -15)
 
+    def test_jmp_tis_accurate(self):
+        n = Node(0, 0)
+        n.lines = ["ADD 5", "label:", "SUB 20",
+                   "labeltwo:", "JMP label", "ADD 20"]
+        n.parse_lines()
+        self.assertTrue(n.is_valid)
+
+        # frame 1:
+        n.execute_next()
+        # n has added 5 and the pc now points to sub 20
+        self.assertEqual(n.acc, 5)
+        self.assertEqual(n.pc, 2)
+
+        # frame 2:
+        n.execute_next()
+        # n has subbed 20 and the pc now points to jmp label
+        self.assertEqual(n.acc, -15)
+        self.assertEqual(n.pc, 4)
+
+        # frame 3:
+        n.execute_next()
+        # n has jumped and the pc now points to sub 20
+        self.assertEqual(n.acc, -15)
+        self.assertEqual(n.pc, 2)
+
+        # frame 4:
+        n.execute_next()
+        # n has subbed 20 and the pc now points to jmp label
+        self.assertEqual(n.acc, -35)
+        self.assertEqual(n.pc, 4)
+
     def test_jmp(self):
         # note: this test is no longer accurate
         n = Node(0, 0)
@@ -204,6 +235,7 @@ class TestNodes(unittest.TestCase):
 
     def test_send_receive(self):
         # note: this test is no longer accurate
+        """
         n1 = Node(0, 0)
         n2 = Node(0, 1)
 
@@ -221,135 +253,8 @@ class TestNodes(unittest.TestCase):
         self.assertIsNone(n1.sending)
         self.assertIsNone(n2.receiving)
         self.assertFalse(n2.receiving_into_acc)
-
-    def test_mov_no_delay(self):
-        # note: this test is no longer accurate
-        n1 = Node(0, 0)  # upper node
-        n2 = Node(0, 1)  # lower node
-        nodes = [n1, n2]
-        main.build_io_tables(nodes)
-
-        n1.lines = ["MOV 2, DOWN", "NOP"]
-        n2.lines = ["MOV UP, ACC", "NOP"]
-        n1.parse_lines()
-        n2.parse_lines()
-
-        self.assertTrue(n1.is_valid)
-        self.assertTrue(n2.is_valid)
-
-        n1.execute_next()
-        self.assertIsNone(n1.receiving)  # n1 is not receiving
-        self.assertFalse(n1.receiving_into_acc)  # n1 is not receiving into acc
-        self.assertEqual(n1.sending, n2)  # n1 is sending to n2
-        self.assertEqual(n1.value_to_send, 2)  # n1 is sending the value 2
-        self.assertEqual(n1.acc, 0)
-        self.assertEqual(n1.pc, 0)  # pc not increased yet
-
-        # n2 has yet to do anything
-        self.assertIsNone(n2.receiving)
-        self.assertIsNone(n2.sending)
-        self.assertIsNone(n2.value_to_send)
-        self.assertFalse(n2.receiving_into_acc)
-        self.assertEqual(n2.acc, 0)
-        self.assertEqual(n2.pc, 0)
-
-        n2.execute_next()
-        self.assertIsNone(n2.receiving)  # n2 has fully received
-        self.assertFalse(n2.receiving_into_acc)
-        self.assertIsNone(n2.sending)
-        self.assertIsNone(n2.value_to_send)
-        self.assertEqual(n2.acc, 2)  # n2 has received 2 into its acc
-        self.assertEqual(n2.pc, 1)  # n2 has left the mov statement
-
-        # n1 has clean IO
-        self.assertIsNone(n1.receiving)
-        self.assertFalse(n1.receiving_into_acc)
-        self.assertIsNone(n1.sending)
-        self.assertIsNone(n1.value_to_send)
-        self.assertEqual(n1.acc, 0)
-        self.assertEqual(n1.pc, 1)
-
-        # no weird future effects, both have clean IO
-        n1.execute_next()
-        n2.execute_next()
-        self.assertEqual(n1.acc, 0)
-        self.assertEqual(n2.acc, 2)
-        self.assertIsNone(n1.sending)
-        self.assertIsNone(n1.receiving)
-        self.assertIsNone(n1.value_to_send)
-        self.assertFalse(n1.receiving_into_acc)
-        self.assertIsNone(n2.sending)
-        self.assertIsNone(n2.receiving)
-        self.assertIsNone(n2.value_to_send)
-        self.assertFalse(n2.receiving_into_acc)
-        self.assertEqual(n1.pc, 0)
-        self.assertEqual(n2.pc, 0)
-
-    def test_mov_from_acc(self):
-        # note: this test is no longer accurate
-        n1 = Node(0, 0)  # upper node
-        n2 = Node(0, 1)  # lower node
-        nodes = [n1, n2]
-        main.build_io_tables(nodes)
-
-        n1.acc = 5
-        n1.lines = ["MOV ACC, DOWN", "NOP"]
-        n2.lines = ["MOV UP, ACC", "NOP"]
-        n1.parse_lines()
-        n2.parse_lines()
-
-        self.assertTrue(n1.is_valid)
-        self.assertTrue(n2.is_valid)
-        self.assertEqual(n1.acc, 5)
-
-        n1.execute_next()
-        self.assertIsNone(n1.receiving)  # n1 is not receiving
-        self.assertFalse(n1.receiving_into_acc)  # n1 is not receiving into acc
-        self.assertEqual(n1.sending, n2)  # n1 is sending to n2
-        # n1 is sending the value from acc
-        self.assertEqual(n1.value_to_send, 5)
-        self.assertEqual(n1.acc, 5)
-        self.assertEqual(n1.pc, 0)  # pc not increased yet
-
-        # n2 has yet to do anything
-        self.assertIsNone(n2.receiving)
-        self.assertIsNone(n2.sending)
-        self.assertIsNone(n2.value_to_send)
-        self.assertFalse(n2.receiving_into_acc)
-        self.assertEqual(n2.acc, 0)
-        self.assertEqual(n2.pc, 0)
-
-        n2.execute_next()
-        self.assertIsNone(n2.receiving)  # n2 has fully received
-        self.assertFalse(n2.receiving_into_acc)
-        self.assertIsNone(n2.sending)
-        self.assertIsNone(n2.value_to_send)
-        self.assertEqual(n2.acc, 5)  # n2 has received 5 into its acc
-        self.assertEqual(n2.pc, 1)  # n2 has left the mov statement
-
-        # n1 has clean IO
-        self.assertIsNone(n1.receiving)
-        self.assertFalse(n1.receiving_into_acc)
-        self.assertIsNone(n1.sending)
-        self.assertIsNone(n1.value_to_send)
-        self.assertEqual(n1.acc, 5)
-        self.assertEqual(n1.pc, 1)
-
-        # no weird future effects, both have clean IO
-        n1.execute_next()
-        n2.execute_next()
-        self.assertEqual(n1.acc, 5)
-        self.assertEqual(n2.acc, 5)
-        self.assertIsNone(n1.sending)
-        self.assertIsNone(n1.receiving)
-        self.assertIsNone(n1.value_to_send)
-        self.assertFalse(n1.receiving_into_acc)
-        self.assertIsNone(n2.sending)
-        self.assertIsNone(n2.receiving)
-        self.assertIsNone(n2.value_to_send)
-        self.assertFalse(n2.receiving_into_acc)
-        self.assertEqual(n1.pc, 0)
-        self.assertEqual(n2.pc, 0)
+        """
+        pass
 
     def test_mov_tis_accurate(self):
         # this test is based off a TIS-100 run, this is the only accurate test
@@ -722,7 +627,7 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n4.pc, 0)
 
         # frame 4:
-        #n1 waiting, n2 moves 36 into n4, which moves that into n3,
+        # n1 waiting, n2 moves 36 into n4, which moves that into n3,
 """
 
 if __name__ == '__main__':

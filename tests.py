@@ -171,24 +171,30 @@ class TestNodes(unittest.TestCase):
             n.execute_next()
         self.assertEqual(n.pc, 4)
         self.assertEqual(n.acc, 5)
-    """
 
     def test_jgz_jlz(self):
-        # note: this test is no longer accurate
         n = Node(0, 0)
         n.lines = ["JGZ label", "JLZ label", "ADD 20", "label:", "NEG"]
         n.parse_lines()
         self.assertTrue(n.is_valid)
-        for i in range(6):  # execute JGZ when acc=-20
+
+        for i in range(4):
             n.execute_next()
-        self.assertEqual(n.pc, 1)
+        self.assertEqual(n.pc, 0)
         self.assertLess(n.acc, 0)
+
         n.execute_next()
-        self.assertEqual(n.pc, 3)
-        for i in range(3):
-            n.execute_next()  # execute JGZ when acc=20
-        self.assertEqual(n.pc, 3)
+        self.assertEqual(n.pc, 1)
+
+        n.execute_next()
+        self.assertEqual(n.pc, 4)
+
+        n.execute_next()
+        self.assertEqual(n.pc, 0)
         self.assertGreater(n.acc, 0)
+
+        n.execute_next()
+        self.assertEqual(n.pc, 4)
 
     def test_nop(self):
         n = Node(0, 0)
@@ -200,6 +206,7 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n.acc, 40)
         self.assertEqual(n.pc, 0)
 
+"""
     def test_jro(self):
         n = Node(0, 0)
         n.lines = ["ADD 2", "JRO ACC", "NOP",

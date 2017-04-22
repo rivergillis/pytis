@@ -263,6 +263,32 @@ class TestNodes(unittest.TestCase):
         n0.execute_next()
         # n0 tried to jump over 0 instructs, lands back on JRO
         self.assertEqual(n0.pc, 1)
+    
+    def test_jro_labels_bounds(self):
+        # note: in reality jro should jump to itself when it cannot find a spot
+        # but I don't think this matters much, infinite loop either way
+        n = Node(0,0)
+        n.lines = ["label:", "label2:", "JRO -1", "NOP"]
+        n0 = Node(0,1)
+        n0.lines = ["JRO 1", "label:", "label2:"]
+
+        n.parse_lines()
+        self.assertTrue(n.is_valid)
+
+        n.execute_next()
+        #n moves up to the jro
+        self.assertEqual(n.pc, 2)
+
+        n.execute_next()
+        #n tries to move under the label and cannot
+        self.assertEqual(n.pc, 0)
+
+        n0.parse_lines()
+        self.assertTrue(n0.is_valid)
+
+        n0.execute_next()
+        #n0 tries to move beyond the label and cannot
+        self.assertEqual(n0.pc, 2)
 
 """
     def test_jro(self):

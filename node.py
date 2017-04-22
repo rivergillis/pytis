@@ -82,7 +82,7 @@ class Node(object):
             args = []
             # get the length of the instruction in args
             for i in instruction:
-                if (i):
+                if (i != None):
                     args.append(i)
                     instruct_len += 1
             # the first arg is the opcode
@@ -153,6 +153,16 @@ class Node(object):
                         instruction += (args[i],)
             self.code[line_num] = instruction
         self.validate_code()
+    
+    def correct_pc_bounds(self):
+        """ corrects out-of-bounds program counters
+        going under 0 sets to 0 and going over length sets to length
+        """
+        if (self.pc >= len(self.lines)):
+            self.pc = len(self.lines) - 1
+        
+        if (self.pc < 0):
+            self.pc = 0
 
     def increment_pc(self):
         """ Updates the pc according to the current status of
@@ -472,11 +482,10 @@ class Node(object):
             self.pc += target
         elif (target == "ACC"):
             self.pc += self.acc
-            # TODO: account for sending the pc over the max lines of code (and
-            # under!)
         else:
             # TODO: add support for UP/DOWN/etc
             pass
+        self.correct_pc_bounds()
 
     def __str__(self):
         s = "Node at (" + str(self.xpos) + "," + str(self.ypos) + ")"

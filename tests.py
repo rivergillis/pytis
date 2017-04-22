@@ -289,29 +289,9 @@ class TestNodes(unittest.TestCase):
         n0.execute_next()
         #n0 tries to move beyond the label and cannot
         self.assertEqual(n0.pc, 2)
-
-"""
-    def test_jro(self):
-        n = Node(0, 0)
-        n.lines = ["ADD 2", "JRO ACC", "NOP",
-                   "JRO -3", "NOP", "JRO -5", "NOP", "SUB 6"]
-        n.parse_lines()
-        self.assertTrue(n.is_valid)
-        n.execute_next()
-        n.execute_next()
-        self.assertEqual(n.acc, 2)
-        self.assertEqual(n.pc, 3)
-        for i in range(3):
-            n.execute_next()
-        self.assertEqual(n.acc, 4)
-        self.assertEqual(n.pc, 5)
-        for i in range(3):
-            n.execute_next()
-        self.assertEqual(n.acc, 6)
-        self.assertEqual(n.pc, 7)
-
+    """
     def test_send_receive(self):
-        # note: this test is no longer accurate
+        # note: this test is no longer accurate?
         
         n1 = Node(0, 0)
         n2 = Node(0, 1)
@@ -331,7 +311,7 @@ class TestNodes(unittest.TestCase):
         self.assertIsNone(n2.receiving)
         self.assertFalse(n2.receiving_into_acc)
         
-        pass
+    """
 
     def test_mov_tis_accurate(self):
         # this test is based off a TIS-100 run, this is the only accurate test
@@ -623,7 +603,7 @@ class TestNodes(unittest.TestCase):
         self.assertIsNone(n3.value_to_send)  # n3 no longer sending
         self.assertFalse(n3.receiving_into_acc)  # n3 not receiving into acc
 
-
+"""
     def test_mov_with_delay(self):
         n1 = Node(0, 0)  # upper left node
         n2 = Node(0, 1)  # lower left node

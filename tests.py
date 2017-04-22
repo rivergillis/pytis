@@ -262,7 +262,7 @@ class TestNodes(unittest.TestCase):
 
         n0.execute_next()
         # n0 tried to jump over 0 instructs, lands back on JRO
-        self.assertEqual(n0.pc, 0)
+        self.assertEqual(n0.pc, 1)
 
 """
     def test_jro(self):

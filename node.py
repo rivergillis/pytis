@@ -190,6 +190,36 @@ class Node(object):
         while (self.code.get(self.pc, False) == False) and (checked < length):
             checked += 1
             self.increment_pc()
+    
+    def move_pc_and_skip_labels(self, move_amount):
+        """ changes the pc by move_amount and skips over any labels we find
+        """
+        # move the pc and keep track of the delta in total_moved
+        # when the delta matches the target delta we're done
+        total_moved = 0
+        is_pos = move_amount > 0
+        while total_moved != move_amount:
+            if is_pos:
+                self.pc += 1
+                total_moved += 1
+                # check if we went over bounds
+                if (self.pc > len(self.lines)):
+                    self.pc = len(self.lines) - 1
+                    return
+                # move the target move amount up if this is label
+                if (self.code.get(self.pc, False) == False):
+                    move_amount += 1
+            else:
+                self.pc -= 1
+                total_moved -= 1
+                # check if we went under bounds
+                if (self.pc < 0):
+                    self.pc = 0
+                    return
+                # move the target move amount down if this is a label
+                if (self.code.get(self.pc, False) == False):
+                    move_amount -= 1
+            
 
     def send_value(self):
         """ Sends a value from the self node to the sending node
@@ -479,13 +509,14 @@ class Node(object):
             JRO ACC uses the value in ACC to specify the offset
         """
         if (type(target) == int):
-            self.pc += target
+            self.move_pc_and_skip_labels(target)
         elif (target == "ACC"):
-            self.pc += self.acc
-        else:
-            # TODO: add support for UP/DOWN/etc
-            pass
-        self.correct_pc_bounds()
+            self.move_pc_and_skip_labels(self.acc)
+        #else:
+        #    # TODO: add support for UP/DOWN/etc
+        #    pass
+        #self.skip_labels()
+        #self.correct_pc_bounds()
 
     def __str__(self):
         s = "Node at (" + str(self.xpos) + "," + str(self.ypos) + ")"

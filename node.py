@@ -5,14 +5,7 @@
     sequentially (possibly twice over).
 """
 
-from enum import Enum
-
-
-class ModeType(Enum):
-    IDLE = 1
-    RUN = 2
-    WRITE = 3
-    READ = 4
+from mode_type import ModeType
 
 # TODO: currently the nodes are executed sequentially, which causes IO
 # problems due to IO revolving around receiving something. May need 2-pass
@@ -61,7 +54,7 @@ class Node(object):
         self.acc = 0
         self.bak = 0
         self.last = None
-        self.mode = ModeType.RUN
+        self.mode = ModeType.IDLE
         self.lines = list()
         self.code = dict()
         self.call_stack = list()
@@ -163,6 +156,9 @@ class Node(object):
                         instruction += (args[i],)
             self.code[line_num] = instruction
         self.validate_code()
+
+        if self.is_valid and self.code:
+            self.mode = ModeType.RUN
 
     def correct_pc_bounds(self):
         """ corrects out-of-bounds program counters
@@ -396,15 +392,18 @@ class Node(object):
             # This is a node we need to receive from
             self.receiving = self.adjacency[reg1]
             print("we need to receive from ", str(self.receiving))
+            self.mode = ModeType.READ
             # somehow set our send value?
         else:
             # This is this node's registers (ACC,etc)
             if reg1 == "ACC":
                 self.value_to_send = self.acc
+                self.mode = ModeType.WRITE
                 print("received from ACC, now sending value ", self.value_to_send)
             # Or reg1 was a literal
             elif type(reg1) == int:
                 self.value_to_send = reg1
+                self.mode = ModeType.WRITE
                 print("received from literal, now sending value ",
                       self.value_to_send)
 
@@ -416,6 +415,15 @@ class Node(object):
             # This is this node's registers (ACC, etc)
             if reg2 == "ACC":
                 self.receiving_into_acc = True
+                # if we're moving a literal into acc, just do it
+                if self.mode == ModeType.WRITE:
+                    self.acc = self.value_to_send
+                    self.value_to_send = None
+                    self.mode = ModeType.RUN
+                    self.receiving_into_acc = False
+
+                    self.increment_pc()
+                    self.skip_labels()
                 print("Set to receive into our ACC")
 
         print("initial mov call finished on ", str(self))

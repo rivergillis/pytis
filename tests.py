@@ -1,5 +1,6 @@
 import unittest
 from node import Node
+from mode_type import ModeType
 import main
 
 
@@ -7,6 +8,7 @@ class TestNodes(unittest.TestCase):
 
     def test_make_node(self):
         n = Node(0, 0)
+        self.assertEqual(n.mode, ModeType.IDLE)
         self.assertEqual(n.xpos, 0)
         self.assertEqual(n.ypos, 0)
         self.assertEqual(n.pc, 0)
@@ -49,7 +51,9 @@ class TestNodes(unittest.TestCase):
     def test_add_i_and_pc(self):
         n = Node(0, 0)
         n.lines = ["ADD 1", "ADD 50", "ADD -3"]
+        self.assertEqual(n.mode, ModeType.IDLE)
         n.parse_lines()
+        self.assertEqual(n.mode, ModeType.RUN)
         self.assertTrue(n.is_valid)
         n.execute_next()
         self.assertEqual(n.pc, 1)
@@ -263,36 +267,36 @@ class TestNodes(unittest.TestCase):
         n0.execute_next()
         # n0 tried to jump over 0 instructs, lands back on JRO
         self.assertEqual(n0.pc, 1)
-    
+
     def test_jro_labels_bounds(self):
         # note: in reality jro should jump to itself when it cannot find a spot
         # but I don't think this matters much, infinite loop either way
-        n = Node(0,0)
+        n = Node(0, 0)
         n.lines = ["label:", "label2:", "JRO -1", "NOP"]
-        n0 = Node(0,1)
+        n0 = Node(0, 1)
         n0.lines = ["JRO 1", "label:", "label2:"]
 
         n.parse_lines()
         self.assertTrue(n.is_valid)
 
         n.execute_next()
-        #n moves up to the jro
+        # n moves up to the jro
         self.assertEqual(n.pc, 2)
 
         n.execute_next()
-        #n tries to move under the label and cannot
+        # n tries to move under the label and cannot
         self.assertEqual(n.pc, 0)
 
         n0.parse_lines()
         self.assertTrue(n0.is_valid)
 
         n0.execute_next()
-        #n0 tries to move beyond the label and cannot
+        # n0 tries to move beyond the label and cannot
         self.assertEqual(n0.pc, 2)
-
+    """
     def test_send_receive(self):
         # note: this test is no longer accurate?
-        
+
         n1 = Node(0, 0)
         n2 = Node(0, 1)
 
@@ -310,7 +314,72 @@ class TestNodes(unittest.TestCase):
         self.assertIsNone(n1.sending)
         self.assertIsNone(n2.receiving)
         self.assertFalse(n2.receiving_into_acc)
+    """
+
+    def test_mov_modes(self):
+        n1 = Node(0, 0)
+        n2 = Node(0, 1)
+
+        nodes = [n1,n2]
+        main.build_io_tables(nodes)
+        n1.lines = ["ADD 2", "MOV ACC, DOWN", "NOP"]
+        n2.lines = ["MOV UP, ACC", "ADD 3", "NOP"]
+
+        for n in nodes:
+            self.assertEqual(n.mode, ModeType.IDLE)
+            n.parse_lines()
+            self.assertTrue(n.is_valid)
+            self.assertEqual(n.mode, ModeType.RUN)
         
+        # after 1 frame
+        # n1.acc = 2, n1.pc = 1, n1 RUN
+        # n2.pc = 0, n2 READ
+        n1.execute_next()
+        n2.execute_next()
+        self.assertEqual(n1.acc, 2)
+        self.assertEqual(n1.pc, 1)
+        self.assertEqual(n1.mode, ModeType.RUN)
+        self.assertIsNone(n1.sending)
+        self.assertIsNone(n1.value_to_send)
+        self.assertEqual(n2.pc, 0)
+        self.assertEqual(n2.mode, ModeType.READ)
+        self.assertIsNone(n2.sending)
+        self.assertEqual(n2.receiving, n1)
+        self.assertTrue(n2.receiving_into_acc)
+
+        # after 2 frames
+        # n1.pc = 1, n1 WRITE
+        # n2.pc = 0, n2 READ, n2.acc = 0
+        n1.execute_next()
+        n2.execute_next()
+        self.assertEqual(n1.acc, 2)
+        self.assertEqual(n1.pc, 1)
+        self.assertEqual(n1.mode, ModeType.WRITE)
+        self.assertEqual(n1.sending, n2)
+        self.assertEqual(n1.value_to_send, n2.acc)
+        self.assertEqual(n2.pc, 0)
+        self.assertEqual(n2.acc, 0)
+        self.assertEqual(n2.mode, ModeType.READ)
+        self.assertIsNone(n2.sending)
+        self.assertEqual(n2.receiving, n1)
+        self.assertTrue(n2.receiving_into_acc)
+
+        # after 3 frames
+        # n1.pc = 2, n1 RUN
+        # n2.acc = 2, n2.pc = 1, n2 RUN
+        n1.execute_next()
+        n2.execute_next()
+        self.assertEqual(n1.acc, 2)
+        self.assertEqual(n1.pc, 2)
+        self.assertEqual(n1.mode, ModeType.RUN)
+        self.assertIsNone(n1.sending)
+        self.assertIsNone(n1.value_to_send)
+        self.assertEqual(n2.pc, 1)
+        self.assertEqual(n2.acc, 2)
+        self.assertEqual(n2.mode, ModeType.RUN)
+        self.assertIsNone(n2.sending)
+        self.assertIsNone(n2.receiving)
+        self.assertFalse(n2.receiving_into_acc)
 
     """
     def test_mov_tis_accurate(self):

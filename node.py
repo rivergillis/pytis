@@ -5,6 +5,15 @@
     sequentially (possibly twice over).
 """
 
+from enum import Enum
+
+
+class ModeType(Enum):
+    IDLE = 1
+    RUN = 2
+    WRITE = 3
+    READ = 4
+
 # TODO: currently the nodes are executed sequentially, which causes IO
 # problems due to IO revolving around receiving something. May need 2-pass
 # for MOV instructs in simulate next frame.
@@ -52,7 +61,7 @@ class Node(object):
         self.acc = 0
         self.bak = 0
         self.last = None
-        self.mode = None
+        self.mode = ModeType.RUN
         self.lines = list()
         self.code = dict()
         self.call_stack = list()
@@ -70,6 +79,7 @@ class Node(object):
 
         self.receiving_into_acc = False
         self.value_to_send = None
+        self.value_to_send_buffer = None
         # print("Created Node at ", xpos, ypos)
 
     def validate_code(self):
@@ -153,14 +163,14 @@ class Node(object):
                         instruction += (args[i],)
             self.code[line_num] = instruction
         self.validate_code()
-    
+
     def correct_pc_bounds(self):
         """ corrects out-of-bounds program counters
         going under 0 sets to 0 and going over length sets to length
         """
         if (self.pc >= len(self.lines)):
             self.pc = len(self.lines) - 1
-        
+
         if (self.pc < 0):
             self.pc = 0
 
@@ -190,7 +200,7 @@ class Node(object):
         while (self.code.get(self.pc, False) == False) and (checked < length):
             checked += 1
             self.increment_pc()
-    
+
     def move_pc_and_skip_labels(self, move_amount):
         """ changes the pc by move_amount and skips over any labels we find
         """
@@ -219,7 +229,6 @@ class Node(object):
                 # move the target move amount down if this is a label
                 if (self.code.get(self.pc, False) == False):
                     move_amount -= 1
-            
 
     def send_value(self):
         """ Sends a value from the self node to the sending node
@@ -278,7 +287,7 @@ class Node(object):
                 self.skip_labels()
             else:
                 # We are sending this value to another node
-                self.value_to_send = value
+                self.value_to_send_buffer = value
                 # TODO: add in the rest of the registers
             return True
         else:
@@ -290,86 +299,90 @@ class Node(object):
         """ Executes the next instruction
             that the program counter points to
         """
-        if (self.full_debug):
-            print("Entering execute_next() for node ", self)
+        # if (self.value_to_send_buffer):
+        #self.value_to_send = self.value_to_send_buffer
+        #self.value_to_send_buffer = None
+        if (self.mode == ModeType.RUN):
+            if (self.full_debug):
+                print("Entering execute_next() for node ", self)
 
-        if (self.receiving):
-            self.receive_value()
-            # If we succesfully receive, we want to increment the PC, but only
-            # if we are not sending
-            if (not self.receiving):
-                # if (not self.sending):
-                #    print("Succesfully completed a MOV onto ", self)
-                #    self.increment_pc()
+            if (self.receiving):
+                self.receive_value()
+                # If we succesfully receive, we want to increment the PC, but only
+                # if we are not sending
+                if (not self.receiving):
+                    # if (not self.sending):
+                    #    print("Succesfully completed a MOV onto ", self)
+                    #    self.increment_pc()
+                    return
+
+            if (self.receiving or self.sending):
+                if (self.receiving):
+                    print("Currently receiving in execute_next(), now returning")
+                if (self.sending):
+                    print("Currently sending in execute_next(), now returning")
+                return
+            # if (self.receiving or self.sending):
+            # return  # we don't do anything if IO is happening TODO: but we
+            # should, right?
+
+            instruction = self.code.get(self.pc, False)
+            # print(instruction)
+            if (instruction == False):
+                # If we have some code, then this is a label and we need to increment pc
+                # if timing is in error, call execute_next() again here
+                self.increment_pc()
+                self.skip_labels()
                 return
 
-        if (self.receiving or self.sending):
-            if (self.receiving):
-                print("Currently receiving in execute_next(), now returning")
-            if (self.sending):
-                print("Currently sending in execute_next(), now returning")
-            return
-        # if (self.receiving or self.sending):
-        # return  # we don't do anything if IO is happening TODO: but we
-        # should, right?
+            # grab the next instruction
+            opcode = instruction[0]
 
-        instruction = self.code.get(self.pc, False)
-        # print(instruction)
-        if (instruction == False):
-            # If we have some code, then this is a label and we need to increment pc
-            # if timing is in error, call execute_next() again here
+            # print(instruction)
+
+            # Ties opcodes to functions
+            if (opcode == "ADD"):
+                self.add(instruction[1])
+            elif (opcode == "SUB"):
+                self.sub(instruction[1])
+            elif (opcode == "NEG"):
+                self.neg()
+            elif (opcode == "SAV"):
+                self.sav()
+            elif (opcode == "SWP"):
+                self.swp()
+
+            # Jumping args should return so we don't mess with the pc
+            elif (opcode == "JMP"):
+                self.jmp(instruction[1])
+                return
+            elif (opcode == "JEZ"):
+                self.jez(instruction[1])
+                return
+            elif (opcode == "JNZ"):
+                self.jnz(instruction[1])
+                return
+            elif (opcode == "JLZ"):
+                self.jlz(instruction[1])
+                return
+            elif (opcode == "JGZ"):
+                self.jgz(instruction[1])
+                return
+            elif (opcode == "JRO"):
+                self.jro(instruction[1])
+                return
+
+            elif (opcode == "MOV"):
+                self.mov(instruction[1], instruction[2])
+                return
+
+            elif (opcode == "NOP"):
+                self.increment_pc()  # Skip this instruction. Consider changing to ADD NIL
+                self.skip_labels()
+                return
+
             self.increment_pc()
             self.skip_labels()
-            return
-
-        # grab the next instruction
-        opcode = instruction[0]
-
-        # print(instruction)
-
-        # Ties opcodes to functions
-        if (opcode == "ADD"):
-            self.add(instruction[1])
-        elif (opcode == "SUB"):
-            self.sub(instruction[1])
-        elif (opcode == "NEG"):
-            self.neg()
-        elif (opcode == "SAV"):
-            self.sav()
-        elif (opcode == "SWP"):
-            self.swp()
-
-        # Jumping args should return so we don't mess with the pc
-        elif (opcode == "JMP"):
-            self.jmp(instruction[1])
-            return
-        elif (opcode == "JEZ"):
-            self.jez(instruction[1])
-            return
-        elif (opcode == "JNZ"):
-            self.jnz(instruction[1])
-            return
-        elif (opcode == "JLZ"):
-            self.jlz(instruction[1])
-            return
-        elif (opcode == "JGZ"):
-            self.jgz(instruction[1])
-            return
-        elif (opcode == "JRO"):
-            self.jro(instruction[1])
-            return
-
-        elif (opcode == "MOV"):
-            self.mov(instruction[1], instruction[2])
-            return
-
-        elif (opcode == "NOP"):
-            self.increment_pc()  # Skip this instruction. Consider changing to ADD NIL
-            self.skip_labels()
-            return
-
-        self.increment_pc()
-        self.skip_labels()
 
     def mov(self, reg1, reg2):
         """ Moves the value from reg1 into reg2
@@ -406,7 +419,7 @@ class Node(object):
                 print("Set to receive into our ACC")
 
         print("initial mov call finished on ", str(self))
-        self.execute_next()  # we need to use one extra clock cycle
+        # self.execute_next()  # we need to use one extra clock cycle
 
     def sav(self):
         """ The value of ACC is written to BAK
@@ -512,11 +525,11 @@ class Node(object):
             self.move_pc_and_skip_labels(target)
         elif (target == "ACC"):
             self.move_pc_and_skip_labels(self.acc)
-        #else:
+        # else:
         #    # TODO: add support for UP/DOWN/etc
         #    pass
-        #self.skip_labels()
-        #self.correct_pc_bounds()
+        # self.skip_labels()
+        # self.correct_pc_bounds()
 
     def __str__(self):
         s = "Node at (" + str(self.xpos) + "," + str(self.ypos) + ")"
